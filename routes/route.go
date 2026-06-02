@@ -21,12 +21,12 @@ func Route() *echo.Echo {
 	// Karyawan (semua role)
 	karyawan := e.Group("", middleware.AuthKaryawan)
 	karyawan.POST("/logout", controllers.Logout)
-	karyawan.PUT("/karyawan/change-password", controllers.ChangePasswordKaryawan)
+	karyawan.PUT("/karyawan/change/password", controllers.ChangePasswordKaryawan)
 
 	// Khusus Bos
 	bos := e.Group("", middleware.AuthBos)
 	bos.POST("/karyawan/register", controllers.RegisterKaryawan)
-	bos.PUT("/karyawan/reset-password/:id", controllers.ResetPasswordKaryawan)
+	bos.PUT("/karyawan/reset/password/:id", controllers.ResetPasswordKaryawan)
 
 	return e
 }

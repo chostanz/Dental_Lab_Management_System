@@ -10,12 +10,11 @@ import (
 func getSecretKey() string {
 	key := os.Getenv("JWT_SECRET")
 	if key == "" {
-		key = "default_secret"
+		key = "secretJwToken"
 	}
 	return key
 }
 
-// GenerateTokenDokter — buat JWT untuk dokter
 func GenerateTokenDokter(idDokter string) (string, error) {
 	claims := jwt.MapClaims{
 		"id_dokter": idDokter,
@@ -25,7 +24,6 @@ func GenerateTokenDokter(idDokter string) (string, error) {
 	return token.SignedString([]byte(getSecretKey()))
 }
 
-// GenerateTokenKaryawan — buat JWT untuk karyawan (cs/teknisi/bos)
 func GenerateTokenKaryawan(idKaryawan string, role string) (string, error) {
 	claims := jwt.MapClaims{
 		"id_karyawan": idKaryawan,

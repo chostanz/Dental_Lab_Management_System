@@ -5,40 +5,12 @@ import (
 	"RPL/services"
 	"RPL/utils"
 	"net/http"
-	"time"
 
-	"github.com/golang-jwt/jwt"
-	jose "github.com/dvsekhvalnov/jose2go"
 	"github.com/labstack/echo/v4"
 )
 
 var secretKey = "secretJwToken"
 
-func generateToken(id string, role string) (string, error) {
-	claims := services.JwtCustomClaims{
-		Id:   id,
-		Role: role,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString([]byte(secretKey))
-	if err != nil {
-		return "", err
-	}
-
-	// Enkripsi JWT ke JWE
-	encrypted, err := jose.Encrypt(signed, jose.PBES2_HS256_A128KW, jose.A128CBC_HS256, secretKey)
-	if err != nil {
-		return "", err
-	}
-
-	return encrypted, nil
-}
-
-// RegisterDokter — FR-01: hanya dokter yang bisa register sendiri
 func RegisterDokter(c echo.Context) error {
 	var req models.RegisterDokter
 	if err := c.Bind(&req); err != nil {
@@ -71,8 +43,6 @@ func RegisterDokter(c echo.Context) error {
 	})
 }
 
-// RegisterKaryawan — FR-01: hanya Bos yang bisa tambah karyawan (CS/Teknisi)
-// dipasang AuthBos di route
 func RegisterKaryawan(c echo.Context) error {
 	var req models.RegisterKaryawan
 	if err := c.Bind(&req); err != nil {
@@ -109,7 +79,6 @@ func RegisterKaryawan(c echo.Context) error {
 	})
 }
 
-// LoginDokter — FR-01
 func LoginDokter(c echo.Context) error {
 	var req models.LoginDokter
 	if err := c.Bind(&req); err != nil {
@@ -136,8 +105,7 @@ func LoginDokter(c echo.Context) error {
 		})
 	}
 
-	// Role dikosongkan karena ini dokter
-	token, err := generateToken(id, "")
+	token, err := utils.GenerateTokenDokter(id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"code":    500,
@@ -158,7 +126,6 @@ func LoginDokter(c echo.Context) error {
 	})
 }
 
-// LoginKaryawan — FR-01: untuk CS, Teknisi, Bos
 func LoginKaryawan(c echo.Context) error {
 	var req models.Login
 	if err := c.Bind(&req); err != nil {
@@ -185,7 +152,7 @@ func LoginKaryawan(c echo.Context) error {
 		})
 	}
 
-	token, err := generateToken(id, role)
+	token, err := utils.GenerateTokenKaryawan(id, role)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"code":    500,
@@ -206,7 +173,6 @@ func LoginKaryawan(c echo.Context) error {
 	})
 }
 
-// ChangePasswordDokter — FR-01
 func ChangePasswordDokter(c echo.Context) error {
 	var req models.ChangePasswordRequest
 	if err := c.Bind(&req); err != nil {
@@ -241,7 +207,6 @@ func ChangePasswordDokter(c echo.Context) error {
 	})
 }
 
-// ChangePasswordKaryawan — FR-01
 func ChangePasswordKaryawan(c echo.Context) error {
 	var req models.ChangePasswordRequest
 	if err := c.Bind(&req); err != nil {
@@ -276,8 +241,6 @@ func ChangePasswordKaryawan(c echo.Context) error {
 	})
 }
 
-// ResetPasswordKaryawan — FR-01: hanya Bos yang bisa reset password karyawan
-// dipasang AuthBos di route
 func ResetPasswordKaryawan(c echo.Context) error {
 	karyawanID := c.Param("id")
 
@@ -300,10 +263,9 @@ func ResetPasswordKaryawan(c echo.Context) error {
 	})
 }
 
-// Logout — invalidate token
 func Logout(c echo.Context) error {
 	token := c.Request().Header.Get("Authorization")
-	utils.InvalidTokens[token] = true
+	utils.InvalidateToken(token)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"code":    200,

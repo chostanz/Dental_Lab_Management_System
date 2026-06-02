@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -9,12 +10,12 @@ import (
 )
 
 type JwtCustomClaims struct {
-	Id   string `json:"id"`
-	Role string `json:"role"` // kosong kalau dokter, diisi kalau karyawan
+	Id   string `json:"id_karyawan"`
+	Role string `json:"role"`
 	jwt.StandardClaims
 }
 
-var secretKey = "secretJwToken" // ganti sesuai .env kamu
+var secretKey = "secretJwToken"
 
 func extractToken(c echo.Context) (string, bool) {
 	authHeader := c.Request().Header.Get("Authorization")
@@ -80,6 +81,8 @@ func AuthKaryawan(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		claims, ok := parseToken(tokenStr)
+		fmt.Println("ID:", claims.Id)
+		fmt.Println("ROLE:", claims.Role)
 		if !ok {
 			return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 				"code":    401,
@@ -102,7 +105,6 @@ func AuthKaryawan(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-// AuthCS — hanya untuk role cs
 func AuthCS(next echo.HandlerFunc) echo.HandlerFunc {
 	return AuthKaryawan(func(c echo.Context) error {
 		if c.Get("role") != "cs" {

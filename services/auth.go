@@ -108,6 +108,8 @@ func RegisterDokter(dokterRegister models.RegisterDokter) error {
 		"email":       dokterRegister.Email,
 		"password":    hashedPassword,
 		"no_hp":       dokterRegister.NoHp,
+		"alamat":      dokterRegister.Alamat,
+		"klinik":      dokterRegister.Klinik,
 	})
 	if errInsert != nil {
 		log.Print(errInsert)
@@ -151,12 +153,13 @@ func RegisterKaryawan(karyawanRegister models.RegisterKaryawan) (plainPassword s
 
 	id := uuid.New().String()
 
-	_, errInsert := db.NamedExec("INSERT INTO karyawan (id_dokter, nama_dokter, email, password, no_hp, alamat, klinik) VALUES (:id_dokter, :nama_dokter, :email, :password, :no_hp, :alamat, :klinik)", map[string]interface{}{
+	_, errInsert := db.NamedExec("INSERT INTO karyawan (id_karyawan, nama, email, password, no_hp, role) VALUES (:id_karyawan, :nama, :email, :password, :no_hp, :role)", map[string]interface{}{
 		"id_karyawan": id,
 		"nama":        karyawanRegister.Nama,
 		"email":       karyawanRegister.Email,
 		"password":    hashedPassword,
 		"no_hp":       karyawanRegister.NoHp,
+		"role":        karyawanRegister.Role,
 	})
 	if errInsert != nil {
 		log.Print(errInsert)
@@ -170,21 +173,11 @@ func LoginDokter(dokterLogin models.LoginDokter) (id string, nama string, err er
 	var namaDokter string
 	var idDokter string
 
-	rows, err := db.Query("SELECT id_dokter, nama_dokter, password from dokter where email = $1", dokterLogin.Email)
+	err = db.QueryRow("SELECT id_dokter, nama_dokter, password from dokter where email = $1", dokterLogin.Email).Scan(
+		&idDokter, &namaDokter, &dbPassword)
 	if err != nil {
 		fmt.Println("Error querying users:", err)
 		return "", "", err
-	}
-
-	defer rows.Close()
-
-	if err != nil {
-		// email tidak ditemukan
-		return "", "", &ValidationError{
-			Message: "Email atau password salah",
-			Field:   "email",
-			Tag:     "invalid_credentials",
-		}
 	}
 	if err = verifyPassword(dbPassword, dokterLogin.Password); err != nil {
 		return "", "", &ValidationError{

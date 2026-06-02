@@ -15,6 +15,13 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
+	// hash, _ := bcrypt.GenerateFromPassword(
+	// 	[]byte("kucinghitam"),
+	// 	bcrypt.DefaultCost,
+	// )
 
+	// fmt.Println(
+	// 	base64.StdEncoding.EncodeToString(hash),
+	// )
 	e.Logger.Fatal(e.Start(":8080"))
 }
