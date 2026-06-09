@@ -20,4 +20,5 @@ type DetailPesanan struct {
 	Jumlah      int     `json:"jumlah" db:"jumlah"`
 	HargaSatuan float64 `json:"harga_satuan" db:"harga_satuan"`
 	Subtotal    float64 `json:"subtotal" db:"subtotal"`
+	CatatanTambahan string `json:"catatan_tambahan" db:"catatan_tambahan"`
 }

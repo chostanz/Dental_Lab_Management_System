@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
@@ -10,12 +10,18 @@ import (
 )
 
 type JwtCustomClaims struct {
-	Id   string `json:"id_karyawan"`
-	Role string `json:"role"`
+	Id   string `json:"id"`   // generic, bisa dokter atau karyawan
+	Role string `json:"role"` // dokter = "", cs/teknisi/bos = rolenya
 	jwt.StandardClaims
 }
 
-var secretKey = "secretJwToken"
+func getSecretKey() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "secretJwToken"
+	}
+	return []byte(secret)
+}
 
 func extractToken(c echo.Context) (string, bool) {
 	authHeader := c.Request().Header.Get("Authorization")
@@ -28,12 +34,46 @@ func extractToken(c echo.Context) (string, bool) {
 func parseToken(tokenStr string) (*JwtCustomClaims, bool) {
 	claims := &JwtCustomClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte(secretKey), nil
+		return getSecretKey(), nil
 	})
 	if err != nil || !token.Valid {
 		return nil, false
 	}
 	return claims, true
+}
+
+func AuthAny(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		tokenStr, ok := extractToken(c)
+		if !ok {
+			return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+				"code":    401,
+				"message": "Token tidak ditemukan atau tidak valid!",
+				"status":  false,
+			})
+		}
+
+		claims, ok := parseToken(tokenStr)
+		if !ok {
+			return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+				"code":    401,
+				"message": "Token tidak valid atau sudah expired!",
+				"status":  false,
+			})
+		}
+
+		if claims.Id == "" {
+			return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+				"code":    401,
+				"message": "Token tidak valid!",
+				"status":  false,
+			})
+		}
+
+		c.Set("id", claims.Id)
+		c.Set("role", claims.Role)
+		return next(c)
+	}
 }
 
 func AuthDokter(next echo.HandlerFunc) echo.HandlerFunc {
@@ -56,10 +96,11 @@ func AuthDokter(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 
+		// fix: dokter tidak punya role, jadi role harus kosong
 		if claims.Id == "" || claims.Role != "" {
-			return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-				"code":    401,
-				"message": "Token bukan milik dokter!",
+			return c.JSON(http.StatusForbidden, map[string]interface{}{
+				"code":    403,
+				"message": "Akses ditolak! Hanya untuk Dokter.",
 				"status":  false,
 			})
 		}
@@ -81,8 +122,6 @@ func AuthKaryawan(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		claims, ok := parseToken(tokenStr)
-		fmt.Println("ID:", claims.Id)
-		fmt.Println("ROLE:", claims.Role)
 		if !ok {
 			return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 				"code":    401,
@@ -91,10 +130,12 @@ func AuthKaryawan(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 
+		// fix: hapus fmt.Println debug
+		// karyawan harus punya id dan role
 		if claims.Id == "" || claims.Role == "" {
-			return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-				"code":    401,
-				"message": "Token bukan milik karyawan!",
+			return c.JSON(http.StatusForbidden, map[string]interface{}{
+				"code":    403,
+				"message": "Akses ditolak! Hanya untuk Karyawan.",
 				"status":  false,
 			})
 		}
@@ -151,6 +192,21 @@ func AuthCSOrBos(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusForbidden, map[string]interface{}{
 				"code":    403,
 				"message": "Akses ditolak! Hanya untuk CS atau Bos.",
+				"status":  false,
+			})
+		}
+		return next(c)
+	})
+}
+
+// AuthCSOrTeknisi untuk halaman produksi yang bisa diakses CS dan Teknisi
+func AuthCSOrTeknisi(next echo.HandlerFunc) echo.HandlerFunc {
+	return AuthKaryawan(func(c echo.Context) error {
+		role := c.Get("role")
+		if role != "cs" && role != "teknisi" {
+			return c.JSON(http.StatusForbidden, map[string]interface{}{
+				"code":    403,
+				"message": "Akses ditolak! Hanya untuk CS atau Teknisi.",
 				"status":  false,
 			})
 		}
