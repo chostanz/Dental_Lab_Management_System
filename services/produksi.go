@@ -29,19 +29,21 @@ func GetAntrianProduksi() ([]models.PengerjaanDetail, error) {
 	pengerjaan := []models.PengerjaanDetail{}
 	err := database.DB.Select(&pengerjaan,
 		`SELECT 
-		    pg.id_pengerjaan, pg.id_pesanan, pg.id_karyawan, pg.id_revisi,
-		    pg.status_produksi, pg.catatan_karyawan, pg.tgl_mulai, pg.tgl_selesai,
-		    pg.created_at, pg.updated_at,
-		    d.nama_dokter,
-		    p.nama_bahan,
-		    dp.kode_gigi
-		 FROM pengerjaan pg
-		 JOIN pesanan ps ON pg.id_pesanan = ps.id_pesanan
-		 JOIN dokter d ON ps.id_dokter = d.id_dokter
-		 LEFT JOIN detail_pesanan dp ON dp.id_pesanan = ps.id_pesanan
-		 LEFT JOIN produk p ON dp.id_produk = p.id_produk
-		 WHERE pg.status_produksi IN ('antrian', 'dikerjakan', 'revisi')
-		 ORDER BY pg.created_at ASC`,
+            pg.id_pengerjaan, pg.id_pesanan, pg.id_karyawan, pg.id_revisi,
+            pg.status_produksi, pg.catatan_karyawan, pg.tgl_mulai, pg.tgl_selesai,
+            pg.created_at, pg.updated_at,
+            d.nama_dokter,
+            p.nama_bahan,
+            dp.kode_gigi, dp.ukuran, dp.warna, dp.jumlah,
+            k.nama 
+         FROM pengerjaan pg
+         JOIN pesanan ps ON pg.id_pesanan = ps.id_pesanan
+         JOIN dokter d ON ps.id_dokter = d.id_dokter
+         LEFT JOIN karyawan k ON pg.id_karyawan = k.id_karyawan -- <-- JOIN KARYAWAN
+         LEFT JOIN detail_pesanan dp ON dp.id_pesanan = ps.id_pesanan
+         LEFT JOIN produk p ON dp.id_produk = p.id_produk
+         WHERE pg.status_produksi IN ('antrian', 'dikerjakan', 'revisi')
+         ORDER BY pg.created_at ASC`,
 	)
 	if err != nil {
 		return nil, err
@@ -53,18 +55,20 @@ func GetAllPengerjaan() ([]models.PengerjaanDetail, error) {
 	pengerjaan := []models.PengerjaanDetail{}
 	err := database.DB.Select(&pengerjaan,
 		`SELECT 
-		    pg.id_pengerjaan, pg.id_pesanan, pg.id_karyawan, pg.id_revisi,
-		    pg.status_produksi, pg.catatan_karyawan, pg.tgl_mulai, pg.tgl_selesai,
-		    pg.created_at, pg.updated_at,
-		    d.nama_dokter,
-		    p.nama_bahan,
-		    dp.kode_gigi
-		 FROM pengerjaan pg
-		 JOIN pesanan ps ON pg.id_pesanan = ps.id_pesanan
-		 JOIN dokter d ON ps.id_dokter = d.id_dokter
-		 LEFT JOIN detail_pesanan dp ON dp.id_pesanan = ps.id_pesanan
-		 LEFT JOIN produk p ON dp.id_produk = p.id_produk
-		 ORDER BY pg.created_at DESC`,
+            pg.id_pengerjaan, pg.id_pesanan, pg.id_karyawan, pg.id_revisi,
+            pg.status_produksi, pg.catatan_karyawan, pg.tgl_mulai, pg.tgl_selesai,
+            pg.created_at, pg.updated_at,
+            d.nama_dokter,
+            p.nama_bahan,
+            dp.kode_gigi, dp.ukuran, dp.warna, dp.jumlah,
+            k.nama 
+         FROM pengerjaan pg
+         JOIN pesanan ps ON pg.id_pesanan = ps.id_pesanan
+         JOIN dokter d ON ps.id_dokter = d.id_dokter
+         LEFT JOIN karyawan k ON pg.id_karyawan = k.id_karyawan -- <-- JOIN KARYAWAN
+         LEFT JOIN detail_pesanan dp ON dp.id_pesanan = ps.id_pesanan
+         LEFT JOIN produk p ON dp.id_produk = p.id_produk
+         ORDER BY pg.created_at DESC`,
 	)
 	if err != nil {
 		return nil, err

@@ -22,10 +22,36 @@ type FilterTransaksiRequest struct {
 func GetAllTransaksi() ([]models.Transaksi, error) {
 	transaksi := []models.Transaksi{}
 	err := database.DB.Select(&transaksi,
-		`SELECT id_transaksi, id_pesanan, id_karyawan, total_harga,
-		        metode_pembayaran, status_pembayaran, tgl_transaksi, updated_at
-		 FROM transaksi ORDER BY tgl_transaksi DESC`,
+		`SELECT 
+            t.id_transaksi, t.id_pesanan, t.id_karyawan, t.total_harga,
+            t.metode_pembayaran, t.status_pembayaran, t.tgl_transaksi, t.updated_at,
+            d.nama_dokter
+         FROM transaksi t
+         JOIN pesanan p ON t.id_pesanan = p.id_pesanan
+         JOIN dokter d ON p.id_dokter = d.id_dokter
+         ORDER BY t.tgl_transaksi DESC`,
 	)
+	if err != nil {
+		return nil, err
+	}
+	return transaksi, nil
+}
+
+func GetTransaksiByDokter(idDokter string) ([]models.Transaksi, error) {
+	transaksi := []models.Transaksi{}
+	query := `
+		SELECT 
+			t.id_transaksi, t.id_pesanan, t.id_karyawan, t.total_harga,
+			t.metode_pembayaran, t.status_pembayaran, t.tgl_transaksi, t.updated_at,
+			d.nama_dokter
+		FROM transaksi t
+		JOIN pesanan p ON t.id_pesanan = p.id_pesanan
+		JOIN dokter d ON p.id_dokter = d.id_dokter
+		WHERE p.id_dokter = $1
+		ORDER BY t.tgl_transaksi DESC
+	`
+
+	err := database.DB.Select(&transaksi, query, idDokter)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +124,6 @@ func KonfirmasiPembayaran(idPesanan string, req UpdateTransaksiRequest) error {
 		}
 	}
 
-	// Ambil data transaksi existing
 	var transaksi models.Transaksi
 	err := database.DB.Get(&transaksi,
 		"SELECT * FROM transaksi WHERE id_pesanan = $1",
@@ -112,7 +137,6 @@ func KonfirmasiPembayaran(idPesanan string, req UpdateTransaksiRequest) error {
 		}
 	}
 
-	// Cek sudah lunas
 	if transaksi.StatusPembayaran == "lunas" {
 		return &ValidationError{
 			Message: "Transaksi sudah lunas",

@@ -40,12 +40,18 @@ type PengerjaanDetail struct {
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 
-	// Tambahan hasil JOIN
-	NamaDokter string `json:"nama_dokter" db:"nama_dokter"`
-	NamaBahan  string `json:"nama_bahan" db:"nama_bahan"` // nama produk pertama
-	KodeGigi   string `json:"kode_gigi" db:"kode_gigi"`
-}
+	// Hasil JOIN - info dokter & produk
+	NamaDokter string  `json:"nama_dokter" db:"nama_dokter"`
+	NamaBahan  *string `json:"nama_bahan" db:"nama_bahan"`
+	NamaKaryawan *string `json:"nama" db:"nama"`
 
+	// Hasil JOIN - detail teknis dari detail_pesanan
+	KodeGigi        *string `json:"kode_gigi" db:"kode_gigi"`
+	Warna           *string `json:"warna" db:"warna"`
+	Ukuran          *string `json:"ukuran" db:"ukuran"`
+	Jumlah          *int    `json:"jumlah" db:"jumlah"`
+	CatatanTambahan *string `json:"catatan_tambahan" db:"catatan_tambahan"` // catatan dari dokter saat pesan
+}
 type Revisi struct {
 	IdRevisi        string    `json:"id_revisi"        db:"id_revisi"`
 	IdPesanan       string    `json:"id_pesanan"       db:"id_pesanan"`

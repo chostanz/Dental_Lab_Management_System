@@ -47,6 +47,44 @@ func GetPengirimanByPesanan(c echo.Context) error {
 	})
 }
 
+func GetPengirimanByDokter(c echo.Context) error {
+	idParam := c.Param("id_dokter")
+
+	// Pengecekan Keamanan: Ambil ID dari token JWT
+	idContext := c.Get("id_dokter")
+	if idContext == nil {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"status":  false,
+			"message": "Akses ditolak: Anda belum login.",
+		})
+	}
+
+	idToken := idContext.(string)
+
+	// Validasi: Pastikan ID di URL sama dengan ID di Token
+	if idParam != idToken {
+		return c.JSON(http.StatusForbidden, map[string]interface{}{
+			"status":  false,
+			"message": "Akses ditolak: Anda hanya dapat melihat pengiriman Anda sendiri.",
+		})
+	}
+
+	pengiriman, err := services.GetPengirimanByDokter(idParam)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"status":  false,
+			"message": "Gagal mengambil data pengiriman",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  true,
+		"message": "Berhasil mengambil data pengiriman dokter",
+		"data":    pengiriman,
+	})
+}
+
 func GetDetailPengiriman(c echo.Context) error {
 	idPengiriman := c.Param("id")
 	if idPengiriman == "" {
@@ -177,7 +215,6 @@ func UpdateStatusPengiriman(c echo.Context) error {
 		"message": message,
 	})
 }
-
 
 // controllers/pengiriman.go - tambahkan ini
 

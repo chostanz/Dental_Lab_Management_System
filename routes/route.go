@@ -47,6 +47,8 @@ func Route() *echo.Echo {
 	pesananKaryawan.GET("/:id/detail", controllers.GetDetailPesanan)
 	pesananKaryawan.GET("/:id/full", controllers.GetPesananLengkap)
 
+	e.GET("/api/pesanan/:id/full", controllers.GetPesananLengkap)
+
 	pesananCS := e.Group("/api/pesanan", middleware.AuthCSOrBos)
 	pesananCS.PUT("/:id/status", controllers.UpdateStatusPesanan)
 	pesananCS.PUT("/:id/transaksi", controllers.UpdateTransaksi)
@@ -74,17 +76,21 @@ func Route() *echo.Echo {
 	persetujuanKaryawan := e.Group("/api/persetujuan/all", middleware.AuthKaryawan)
 	persetujuanKaryawan.GET("/:id_pesanan", controllers.GetPersetujuanByPesanan)
 
-	pengiriman := e.Group("/api/pengiriman", middleware.AuthCS)
-	pengiriman.GET("", controllers.GetAllPengiriman)
+	pengiriman := e.Group("/api/pengiriman", middleware.AuthCSOrBos)
+	e.GET("/api/pengiriman", controllers.GetAllPengiriman)
 	pengiriman.GET("/siap-kirim", controllers.GetPesananSiapKirim)
-	pengiriman.GET("/:id/detail", controllers.GetDetailPengiriman)
+	e.GET("/api/pengiriman/:id/detail", controllers.GetDetailPengiriman)
 	pengiriman.GET("/pesanan/:id_pesanan", controllers.GetPengirimanByPesanan)
 	pengiriman.POST("", controllers.AddPengiriman)
 	pengiriman.PUT("/:id/status", controllers.UpdateStatusPengiriman)
 
-	pengirimanDokter := e.Group("/api/pengiriman", middleware.AuthDokter)
+	pengirimanDokter := e.Group("/api/pengiriman/dokter", middleware.AuthDokter)
 	pengirimanDokter.GET("/pesanan/:id_pesanan", controllers.GetPengirimanByPesananDokter)
 	pengirimanDokter.GET("/:id/detail", controllers.GetDetailPengirimanDokter)
+	pengirimanDokter.GET("/:id_dokter", controllers.GetPengirimanByDokter)
+
+	transaksiDokter := e.Group("/api/transaksi/dokter", middleware.AuthDokter)
+	transaksiDokter.GET("/:id_dokter", controllers.GetTransaksiByDokter)
 
 	transaksi := e.Group("/api/transaksi", middleware.AuthCSOrBos)
 	transaksi.GET("", controllers.GetAllTransaksi)
@@ -93,6 +99,22 @@ func Route() *echo.Echo {
 	transaksi.GET("/pesanan/:id", controllers.GetTransaksiByPesanan)
 	transaksi.GET("/filtered", controllers.GetTransaksiFiltered)
 	transaksi.PUT("/pesanan/:id_pesanan/konfirmasi", controllers.KonfirmasiPembayaran)
+
+	karyawanProfil := e.Group("/api/profil/karyawan", middleware.AuthKaryawan)
+	karyawanProfil.GET("", controllers.GetProfileKaryawan)
+	karyawanProfil.PUT("", controllers.UpdateProfileKaryawan)
+
+	dokterProfil := e.Group("/api/profil/dokter", middleware.AuthDokter)
+	dokterProfil.GET("", controllers.GetProfileDokter)
+	dokterProfil.PUT("", controllers.UpdateProfileDokter)
+
+	bosGroup := e.Group("/api/karyawan", middleware.AuthBos)
+	bosGroup.POST("", controllers.RegisterKaryawan)
+	bosGroup.GET("", controllers.GetAllKaryawan)
+	bosGroup.GET("/:id", controllers.GetKaryawanByID)
+	bosGroup.PUT("/:id", controllers.UpdateKaryawan)
+	bosGroup.POST("/:id/reset-password", controllers.ResetPasswordKaryawan)
+	bosGroup.DELETE("/:id", controllers.DeleteKaryawan)
 
 	dashboard := e.Group("/api/dashboard", middleware.AuthKaryawan)
 	dashboard.GET("/statistik", controllers.GetDashboardStats)

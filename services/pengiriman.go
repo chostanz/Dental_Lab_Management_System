@@ -20,12 +20,35 @@ type UpdateStatusPengirimanRequest struct {
 }
 
 func GetAllPengiriman() ([]models.Pengiriman, error) {
+    pengiriman := []models.Pengiriman{}
+    err := database.DB.Select(&pengiriman,
+        `SELECT id_pengiriman, id_pesanan, nama_jasa, no_resi,
+                tgl_kirim, tgl_diterima, created_at, updated_at,
+                (SELECT status FROM detail_pengiriman 
+                 WHERE id_pengiriman = pengiriman.id_pengiriman 
+                 ORDER BY waktu DESC LIMIT 1) AS status_terakhir
+         FROM pengiriman ORDER BY created_at DESC`,
+    )
+    if err != nil {
+        return nil, err
+    }
+    return pengiriman, nil
+}
+
+func GetPengirimanByDokter(idDokter string) ([]models.Pengiriman, error) {
 	pengiriman := []models.Pengiriman{}
-	err := database.DB.Select(&pengiriman,
-		`SELECT id_pengiriman, id_pesanan, nama_jasa, no_resi,
-		        tgl_kirim, tgl_diterima, created_at, updated_at
-		 FROM pengiriman ORDER BY created_at DESC`,
-	)
+	query := `
+		SELECT 
+			pg.id_pengiriman, pg.id_pesanan, pg.nama_jasa, pg.no_resi,
+			pg.tgl_kirim, pg.tgl_diterima, pg.created_at, pg.updated_at,
+            (SELECT status FROM detail_pengiriman WHERE id_pengiriman = pg.id_pengiriman ORDER BY waktu DESC LIMIT 1) AS status_terakhir
+		FROM pengiriman pg
+		JOIN pesanan p ON pg.id_pesanan = p.id_pesanan
+		WHERE p.id_dokter = $1
+		ORDER BY pg.created_at DESC
+	`
+
+	err := database.DB.Select(&pengiriman, query, idDokter)
 	if err != nil {
 		return nil, err
 	}
@@ -35,9 +58,12 @@ func GetAllPengiriman() ([]models.Pengiriman, error) {
 func GetPengirimanByPesanan(idPesanan string) (models.Pengiriman, error) {
 	var pengiriman models.Pengiriman
 	err := database.DB.Get(&pengiriman,
-		`SELECT id_pengiriman, id_pesanan, nama_jasa, no_resi,
-		        tgl_kirim, tgl_diterima, created_at, updated_at
-		 FROM pengiriman WHERE id_pesanan = $1`,
+		`SELECT 
+            pg.id_pengiriman, pg.id_pesanan, pg.nama_jasa, pg.no_resi,
+			pg.tgl_kirim, pg.tgl_diterima, pg.created_at, pg.updated_at,
+            (SELECT status FROM detail_pengiriman WHERE id_pengiriman = pg.id_pengiriman ORDER BY waktu DESC LIMIT 1) AS status_terakhir
+		 FROM pengiriman pg 
+         WHERE pg.id_pesanan = $1`,
 		idPesanan,
 	)
 	if err != nil {
@@ -156,14 +182,6 @@ func AddPengiriman(req AddPengirimanRequest) error {
 		return err
 	}
 
-	_, err = tx.Exec(
-		"UPDATE pesanan SET status_pesanan = $1, updated_at = $2 WHERE id_pesanan = $3",
-		"dikirim", currentTime, req.IdPesanan,
-	)
-	if err != nil {
-		return err
-	}
-
 	return tx.Commit()
 }
 
@@ -208,6 +226,7 @@ func UpdateStatusPengiriman(idPengiriman string, req UpdateStatusPengirimanReque
 		}
 	}()
 
+	// 1. Catat riwayat status baru ke detail_pengiriman
 	detailId := uuid.New().String()
 	_, err = tx.Exec(
 		`INSERT INTO detail_pengiriman
@@ -223,7 +242,9 @@ func UpdateStatusPengiriman(idPengiriman string, req UpdateStatusPengirimanReque
 		return err
 	}
 
+	// 2. Update tabel induk
 	if req.Status == "Diterima" {
+		// Update tgl_diterima di pengiriman
 		_, err = tx.Exec(
 			"UPDATE pengiriman SET tgl_diterima = $1, updated_at = $2 WHERE id_pengiriman = $3",
 			currentTime, currentTime, idPengiriman,
@@ -232,6 +253,7 @@ func UpdateStatusPengiriman(idPengiriman string, req UpdateStatusPengirimanReque
 			return err
 		}
 
+		// Update pesanan jadi 'selesai'
 		_, err = tx.Exec(
 			"UPDATE pesanan SET status_pesanan = $1, updated_at = $2 WHERE id_pesanan = $3",
 			"selesai", currentTime, idPesanan,
@@ -248,7 +270,6 @@ func UpdateStatusPengiriman(idPengiriman string, req UpdateStatusPengirimanReque
 			return err
 		}
 	}
-
 	return tx.Commit()
 }
 
@@ -268,9 +289,6 @@ func GetPesananSiapKirim() ([]models.Pesanan, error) {
 	return pesanan, nil
 }
 
-// services/pengiriman.go - tambahkan ini
-
-// Validasi pengiriman ini milik dokter yang sedang login
 func ValidatePengirimanOwnership(idPesanan string, idDokter string) error {
 	var pemilikDokter string
 	err := database.DB.Get(&pemilikDokter,
@@ -296,7 +314,6 @@ func ValidatePengirimanOwnership(idPesanan string, idDokter string) error {
 	return nil
 }
 
-// Validasi pengiriman by id_pengiriman milik dokter yang login
 func ValidatePengirimanOwnershipByID(idPengiriman string, idDokter string) error {
 	var pemilikDokter string
 	err := database.DB.Get(&pemilikDokter,

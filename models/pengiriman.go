@@ -9,7 +9,10 @@ type Pengiriman struct {
 	NoResi       string     `json:"no_resi" db:"no_resi"`
 	TglKirim     *time.Time `json:"tgl_kirim" db:"tgl_kirim"`
 	TglDiterima  *time.Time `json:"tgl_diterima" db:"tgl_diterima"`
+	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
+
+	StatusTerakhir *string   `json:"status_terakhir" db:"status_terakhir"`
 }
 
 type DetailPengiriman struct {

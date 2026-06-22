@@ -48,6 +48,44 @@ func GetTransaksiById(c echo.Context) error {
 	})
 }
 
+func GetTransaksiByDokter(c echo.Context) error {
+	idParam := c.Param("id_dokter")
+
+	// Pengecekan Keamanan: Ambil ID dari token JWT
+	idContext := c.Get("id_dokter")
+	if idContext == nil {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"status":  false,
+			"message": "Akses ditolak: Anda belum login.",
+		})
+	}
+	
+	idToken := idContext.(string)
+
+	// Validasi: Pastikan ID di URL sama dengan ID di Token
+	if idParam != idToken {
+		return c.JSON(http.StatusForbidden, map[string]interface{}{
+			"status":  false,
+			"message": "Akses ditolak: Anda hanya dapat melihat transaksi Anda sendiri.",
+		})
+	}
+
+	transaksi, err := services.GetTransaksiByDokter(idParam)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"status":  false,
+			"message": "Gagal mengambil data transaksi",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  true,
+		"message": "Berhasil mengambil data transaksi dokter",
+		"data":    transaksi,
+	})
+}
+
 func GetTransaksiByPesanan(c echo.Context) error {
 	idPesanan := c.Param("id_pesanan")
 	if idPesanan == "" {
