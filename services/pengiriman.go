@@ -267,3 +267,60 @@ func GetPesananSiapKirim() ([]models.Pesanan, error) {
 	}
 	return pesanan, nil
 }
+
+// services/pengiriman.go - tambahkan ini
+
+// Validasi pengiriman ini milik dokter yang sedang login
+func ValidatePengirimanOwnership(idPesanan string, idDokter string) error {
+	var pemilikDokter string
+	err := database.DB.Get(&pemilikDokter,
+		"SELECT id_dokter FROM pesanan WHERE id_pesanan = $1",
+		idPesanan,
+	)
+	if err != nil {
+		return &ValidationError{
+			Message: "Pesanan tidak ditemukan",
+			Field:   "id_pesanan",
+			Tag:     "not_found",
+		}
+	}
+
+	if pemilikDokter != idDokter {
+		return &ValidationError{
+			Message: "Anda tidak memiliki akses ke pengiriman ini",
+			Field:   "id_pesanan",
+			Tag:     "forbidden",
+		}
+	}
+
+	return nil
+}
+
+// Validasi pengiriman by id_pengiriman milik dokter yang login
+func ValidatePengirimanOwnershipByID(idPengiriman string, idDokter string) error {
+	var pemilikDokter string
+	err := database.DB.Get(&pemilikDokter,
+		`SELECT p.id_dokter 
+		 FROM pesanan p
+		 JOIN pengiriman pg ON p.id_pesanan = pg.id_pesanan
+		 WHERE pg.id_pengiriman = $1`,
+		idPengiriman,
+	)
+	if err != nil {
+		return &ValidationError{
+			Message: "Pengiriman tidak ditemukan",
+			Field:   "id_pengiriman",
+			Tag:     "not_found",
+		}
+	}
+
+	if pemilikDokter != idDokter {
+		return &ValidationError{
+			Message: "Anda tidak memiliki akses ke pengiriman ini",
+			Field:   "id_pengiriman",
+			Tag:     "forbidden",
+		}
+	}
+
+	return nil
+}

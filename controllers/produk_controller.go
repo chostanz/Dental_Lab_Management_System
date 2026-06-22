@@ -58,13 +58,17 @@ func AddProduk(c echo.Context) error {
 			Status:  false,
 		})
 	}
+	log.Printf("Data Produk diterima: %+v\n", addProduk)
 	errVal := c.Validate(&addProduk)
+	if errVal != nil {
+		log.Printf("Validation Error: %v\n", errVal)
+	}
 	if errVal == nil {
 		addErr := services.AddProduk(addProduk)
 		if addErr != nil {
 			return c.JSON(http.StatusInternalServerError, &models.Response{
 				Code:    500,
-				Message: "Terjadi kesalahan internal pada server.",
+				Message: "Terjadi kesalahan internal pada server." + errVal.Error(),
 				Status:  false,
 			})
 		}
@@ -76,11 +80,12 @@ func AddProduk(c echo.Context) error {
 	} else {
 		return c.JSON(http.StatusUnprocessableEntity, &models.Response{
 			Code:    422,
-			Message: "Data tidak boleh kosong!",
+			Message: "Data tidak boleh kosong!" + errVal.Error(),
 			Status:  false,
 		})
 	}
 }
+
 func UpdateProduk(c echo.Context) error {
 	id := c.Param("id")
 
@@ -138,7 +143,7 @@ func DeleteProduk(c echo.Context) error {
 	if errService != nil {
 		return c.JSON(http.StatusNotFound, &models.Response{
 			Code:    404,
-			Message: "Gagal menghapus role. Role tidak ditemukan!",
+			Message: "Gagal menghapus produk. Produk tidak ditemukan!",
 			Status:  false,
 		})
 	}

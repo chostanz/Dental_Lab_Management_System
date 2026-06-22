@@ -50,7 +50,7 @@ func GetPesananById(id string) (models.Pesanan, error) {
 
 func GetPesananByDokter(idDokter string) ([]models.Pesanan, error) {
 	pesanan := []models.Pesanan{}
-	err := db.Select(&pesanan, "SELECT id_pesanan, id_dokter, status_pengerjaan, tgl_pesanan, updated_at FROM pesanan WHERE id_dokter = $1 ORDER BY tgl_pesanan DESC", idDokter)
+	err := db.Select(&pesanan, "SELECT id_pesanan, id_dokter, status_pesanan, tgl_pesanan, updated_at FROM pesanan WHERE id_dokter = $1 ORDER BY tgl_pesanan DESC", idDokter)
 	if err != nil {
 		return nil, err
 	}
@@ -120,12 +120,13 @@ func AddPesanan(req AddPesananRequest) error {
 		`INSERT INTO transaksi 
 		 (id_transaksi, id_pesanan, id_karyawan, total_harga, status_pembayaran, tgl_transaksi, updated_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		transaksiId,
-		pesananId,
-		totalHarga,
-		"belum bayar",
-		currentTime,
-		currentTime,
+		transaksiId,   // $1: id_transaksi
+		pesananId,     // $2: id_pesanan
+		nil,           // $3: id_karyawan (Kosongkan dulu karena dokter yang pesen)
+		totalHarga,    // $4: total_harga
+		"belum bayar", // $5: status_pembayaran
+		currentTime,   // $6: tgl_transaksi
+		currentTime,   // $7: updated_at
 	)
 	if err != nil {
 		return err
@@ -203,4 +204,43 @@ func UpdateTransaksi(idPesanan string, idKaryawan string, metode string, status 
 		return err
 	}
 	return nil
+}
+
+func GetPesananLengkap(id string) (*models.DetailPesananLengkap, error) {
+
+	pesanan, err := GetPesananById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	detail, _ := GetDetailPesanan(id)
+
+	var transaksi models.Transaksi
+	database.DB.Get(
+		&transaksi,
+		"SELECT * FROM transaksi WHERE id_pesanan=$1",
+		id,
+	)
+
+	var pengiriman models.Pengiriman
+	database.DB.Get(
+		&pengiriman,
+		"SELECT * FROM pengiriman WHERE id_pesanan=$1",
+		id,
+	)
+
+	var revisi []models.Revisi
+	database.DB.Select(
+		&revisi,
+		"SELECT * FROM revisi WHERE id_pesanan=$1",
+		id,
+	)
+
+	return &models.DetailPesananLengkap{
+		Pesanan:       pesanan,
+		DetailPesanan: detail,
+		Transaksi:     &transaksi,
+		Pengiriman:    &pengiriman,
+		Revisi:        revisi,
+	}, nil
 }

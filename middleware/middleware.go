@@ -10,8 +10,10 @@ import (
 )
 
 type JwtCustomClaims struct {
-	Id   string `json:"id"`   // generic, bisa dokter atau karyawan
-	Role string `json:"role"` // dokter = "", cs/teknisi/bos = rolenya
+	Id         string `json:"id"`          // generic, bisa dokter atau karyawan
+	IdKaryawan string `json:"id_karyawan"` // Tambahan untuk token karyawan
+	IdDokter   string `json:"id_dokter"`   // Tambahan untuk token dokter
+	Role       string `json:"role"`        // dokter = "", cs/teknisi/bos = rolenya
 	jwt.StandardClaims
 }
 
@@ -95,9 +97,11 @@ func AuthDokter(next echo.HandlerFunc) echo.HandlerFunc {
 				"status":  false,
 			})
 		}
-
-		// fix: dokter tidak punya role, jadi role harus kosong
-		if claims.Id == "" || claims.Role != "" {
+		dokterID := claims.Id
+		if dokterID == "" {
+			dokterID = claims.IdDokter
+		}
+		if dokterID == "" || claims.Role != "" {
 			return c.JSON(http.StatusForbidden, map[string]interface{}{
 				"code":    403,
 				"message": "Akses ditolak! Hanya untuk Dokter.",
@@ -105,7 +109,7 @@ func AuthDokter(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 
-		c.Set("id_dokter", claims.Id)
+		c.Set("id_dokter", dokterID)
 		return next(c)
 	}
 }
@@ -129,10 +133,13 @@ func AuthKaryawan(next echo.HandlerFunc) echo.HandlerFunc {
 				"status":  false,
 			})
 		}
+		karyawanID := claims.Id
+		if karyawanID == "" {
+			karyawanID = claims.IdKaryawan
+		}
 
-		// fix: hapus fmt.Println debug
 		// karyawan harus punya id dan role
-		if claims.Id == "" || claims.Role == "" {
+		if karyawanID == "" || claims.Role == "" {
 			return c.JSON(http.StatusForbidden, map[string]interface{}{
 				"code":    403,
 				"message": "Akses ditolak! Hanya untuk Karyawan.",
@@ -140,7 +147,7 @@ func AuthKaryawan(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 
-		c.Set("id_karyawan", claims.Id)
+		c.Set("id_karyawan", karyawanID)
 		c.Set("role", claims.Role)
 		return next(c)
 	}

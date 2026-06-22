@@ -94,10 +94,24 @@ func GetDetailPesanan(c echo.Context) error {
 		"data":    details,
 	})
 }
-
 func AddPesanan(c echo.Context) error {
-	req := new(services.AddPesananRequest)
-	if err := c.Bind(req); err != nil {
+	// 1. AMBIL ID DOKTER DENGAN AMAN (Safe Type Assertion)
+	idContext := c.Get("id_dokter")
+	if idContext == nil {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"status":  false,
+			"message": "Akses Ditolak: Anda belum login atau token tidak valid (Bukan Dokter).",
+		})
+	}
+
+	// Jika aman, baru ubah ke string
+	idDokter := idContext.(string)
+
+	// 2. Deklarasikan variabel request (Bukan pointer)
+	var req services.AddPesananRequest
+
+	// 3. Bind JSON body dari frontend ke dalam struct req
+	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"status":  false,
 			"message": "Format request tidak valid",
@@ -105,17 +119,14 @@ func AddPesanan(c echo.Context) error {
 		})
 	}
 
-	// Validasi id_dokter tidak kosong
-	if req.IdDokter == "" {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"status":  false,
-			"message": "ID dokter tidak boleh kosong",
-		})
-	}
+	// 4. SUNTIKKAN ID DOKTER DARI TOKEN
+	req.IdDokter = idDokter
 
-	err := services.AddPesanan(*req)
+	// 5. Panggil service SATU KALI saja
+	err := services.AddPesanan(req)
+
+	// 6. Tangani error jika terjadi kegagalan di service
 	if err != nil {
-		// Cek apakah ValidationError
 		if valErr, ok := err.(*services.ValidationError); ok {
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
 				"status":  false,
@@ -123,6 +134,7 @@ func AddPesanan(c echo.Context) error {
 				"field":   valErr.Field,
 			})
 		}
+
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"status":  false,
 			"message": "Gagal menambahkan pesanan",
@@ -130,6 +142,7 @@ func AddPesanan(c echo.Context) error {
 		})
 	}
 
+	// 7. Jika sukses
 	return c.JSON(http.StatusCreated, map[string]interface{}{
 		"status":  true,
 		"message": "Pesanan berhasil dibuat, menunggu persetujuan bos",
@@ -235,5 +248,26 @@ func UpdateTransaksi(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"status":  true,
 		"message": "Transaksi berhasil diupdate",
+	})
+}
+
+
+func GetPesananLengkap(c echo.Context) error {
+
+	id := c.Param("id")
+
+	data, err := services.GetPesananLengkap(id)
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{
+			"status": false,
+			"message": "Pesanan tidak ditemukan",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status": true,
+		"message": "Berhasil mengambil detail pesanan lengkap",
+		"data": data,
 	})
 }

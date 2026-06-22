@@ -177,3 +177,96 @@ func UpdateStatusPengiriman(c echo.Context) error {
 		"message": message,
 	})
 }
+
+
+// controllers/pengiriman.go - tambahkan ini
+
+func GetPengirimanByPesananDokter(c echo.Context) error {
+	idPesanan := c.Param("id_pesanan")
+	if idPesanan == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"status":  false,
+			"message": "ID pesanan tidak boleh kosong",
+		})
+	}
+
+	// Ambil id_dokter dari token (di-set oleh middleware AuthDokter)
+	idDokter := c.Get("id_dokter").(string)
+
+	// Validasi kepemilikan
+	if err := services.ValidatePengirimanOwnership(idPesanan, idDokter); err != nil {
+		if valErr, ok := err.(*services.ValidationError); ok {
+			status := http.StatusBadRequest
+			if valErr.Tag == "forbidden" {
+				status = http.StatusForbidden
+			}
+			return c.JSON(status, map[string]interface{}{
+				"status":  false,
+				"message": valErr.Message,
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"status":  false,
+			"message": "Gagal validasi akses",
+			"error":   err.Error(),
+		})
+	}
+
+	data, err := services.GetPengirimanByPesanan(idPesanan)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{
+			"status":  false,
+			"message": "Data pengiriman tidak ditemukan",
+			"error":   err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  true,
+		"message": "Berhasil mengambil data pengiriman",
+		"data":    data,
+	})
+}
+
+func GetDetailPengirimanDokter(c echo.Context) error {
+	idPengiriman := c.Param("id")
+	if idPengiriman == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"status":  false,
+			"message": "ID pengiriman tidak boleh kosong",
+		})
+	}
+
+	idDokter := c.Get("id_dokter").(string)
+
+	if err := services.ValidatePengirimanOwnershipByID(idPengiriman, idDokter); err != nil {
+		if valErr, ok := err.(*services.ValidationError); ok {
+			status := http.StatusBadRequest
+			if valErr.Tag == "forbidden" {
+				status = http.StatusForbidden
+			}
+			return c.JSON(status, map[string]interface{}{
+				"status":  false,
+				"message": valErr.Message,
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"status":  false,
+			"message": "Gagal validasi akses",
+			"error":   err.Error(),
+		})
+	}
+
+	data, err := services.GetDetailPengiriman(idPengiriman)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"status":  false,
+			"message": "Gagal mengambil detail pengiriman",
+			"error":   err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  true,
+		"message": "Berhasil mengambil detail pengiriman",
+		"data":    data,
+	})
+}

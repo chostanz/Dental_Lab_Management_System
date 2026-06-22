@@ -100,7 +100,7 @@ func LoginDokter(c echo.Context) error {
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"code":    500,
-			"message": "Terjadi kesalahan pada server!",
+			"message": "Terjadi kesalahan pada server!" + err.Error(),
 			"status":  false,
 		})
 	}

@@ -126,3 +126,16 @@ CREATE INDEX idx_pengerjaan_status ON pengerjaan(status_produksi);
 CREATE INDEX idx_transaksi_status ON transaksi(status_pembayaran);
 
 select * from karyawan;
+
+
+INSERT INTO produk (id_produk, nama_bahan, spesifikasi, harga) VALUES
+('9e88d752-6b94-4d2b-b5d1-13ef2b1922c1', 'Crown PFM', 'Porcelain Fused to Metal standard', 500000),
+('a3c91d8e-9087-43c2-a4e9-158a2d1847f2', 'Crown Zirconia', 'Full Zirconia Monolithic', 1200000),
+('2d4a6f9c-76e3-4d82-8c10-09257e1ab321', 'E-Max Press', 'Lithium Disilicate Crown', 1500000),
+('f1b8c2d5-e94a-48d6-a2b1-67e4f1a2c3d4', 'Gigi Tiruan Akrilik', 'Full Denture Akrilik (RA/RB)', 2000000),
+('8c5d3a9b-1e24-4f5c-b8e7-2c6f1a3b4e5d', 'Valplast', 'Gigi Tiruan Fleksibel per elemen', 400000),
+('b4a7f2e1-8d3c-49b5-a6e1-5f2d3c4b1e9a', 'Retainer Hawley', 'Orthodontic Retainer', 600000),
+('1e9d2c4b-3a8f-46c1-b7d5-9e2a1f4c3b8d', 'Clear Aligner', 'Plastik PETG per set', 1000000),
+('7f3a1b5c-4d2e-4b8a-9c1f-3e5d2a4b6c8f', 'Night Guard', 'Soft/Hard acrylic untuk bruxism', 750000),
+('c2e4b6d8-1a3f-4e5c-a8d9-7b5c3e1a2f4d', 'Inlay/Onlay Composite', 'Komposit indirect', 450000),
+('5d1a3c7b-8e2f-4a9b-c6d4-1f2e3a5b4c9d', 'Bridge PFM', 'Jembatan 3 unit PFM', 1500000);

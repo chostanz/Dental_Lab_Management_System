@@ -11,6 +11,7 @@ type Persetujuan struct {
 	Status         string    `json:"status" db:"status"`
 	CatatanBos     string    `json:"catatan_bos" db:"catatan_bos"`
 	TglPersetujuan time.Time `json:"tgl_persetujuan" db:"tgl_persetujuan"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }
 
@@ -20,10 +21,29 @@ type Pengerjaan struct {
 	IdKaryawan      string     `json:"id_karyawan" db:"id_karyawan"`
 	IdRevisi        *string    `json:"id_revisi" db:"id_revisi"`
 	StatusProduksi  string     `json:"status_produksi" db:"status_produksi"`
-	CatatanKaryawan string     `json:"catatan_karyawan" db:"catatan_karyawan"`
+	CatatanKaryawan *string    `json:"catatan_karyawan" db:"catatan_karyawan"`
 	TglMulai        *time.Time `json:"tgl_mulai" db:"tgl_mulai"`
 	TglSelesai      *time.Time `json:"tgl_selesai" db:"tgl_selesai"`
+	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+type PengerjaanDetail struct {
+	IdPengerjaan    string     `json:"id_pengerjaan" db:"id_pengerjaan"`
+	IdPesanan       string     `json:"id_pesanan" db:"id_pesanan"`
+	IdKaryawan      string     `json:"id_karyawan" db:"id_karyawan"`
+	IdRevisi        *string    `json:"id_revisi" db:"id_revisi"`
+	StatusProduksi  string     `json:"status_produksi" db:"status_produksi"`
+	CatatanKaryawan *string    `json:"catatan_karyawan" db:"catatan_karyawan"`
+	TglMulai        *time.Time `json:"tgl_mulai" db:"tgl_mulai"`
+	TglSelesai      *time.Time `json:"tgl_selesai" db:"tgl_selesai"`
+	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
+
+	// Tambahan hasil JOIN
+	NamaDokter string `json:"nama_dokter" db:"nama_dokter"`
+	NamaBahan  string `json:"nama_bahan" db:"nama_bahan"` // nama produk pertama
+	KodeGigi   string `json:"kode_gigi" db:"kode_gigi"`
 }
 
 type Revisi struct {

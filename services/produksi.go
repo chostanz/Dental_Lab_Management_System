@@ -25,15 +25,23 @@ type AddRevisiRequest struct {
 	DeskripsiRevisi string `json:"deskripsi_revisi"`
 }
 
-func GetAntrianProduksi() ([]models.Pengerjaan, error) {
-	pengerjaan := []models.Pengerjaan{}
+func GetAntrianProduksi() ([]models.PengerjaanDetail, error) {
+	pengerjaan := []models.PengerjaanDetail{}
 	err := database.DB.Select(&pengerjaan,
-		`SELECT id_pengerjaan, id_pesanan, id_karyawan, id_revisi,
-		        status_produksi, catatan_karyawan, tgl_mulai, tgl_selesai,
-		        created_at, updated_at
-		 FROM pengerjaan
-		 WHERE status_produksi IN ('antrian', 'dikerjakan', 'revisi')
-		 ORDER BY created_at ASC`,
+		`SELECT 
+		    pg.id_pengerjaan, pg.id_pesanan, pg.id_karyawan, pg.id_revisi,
+		    pg.status_produksi, pg.catatan_karyawan, pg.tgl_mulai, pg.tgl_selesai,
+		    pg.created_at, pg.updated_at,
+		    d.nama_dokter,
+		    p.nama_bahan,
+		    dp.kode_gigi
+		 FROM pengerjaan pg
+		 JOIN pesanan ps ON pg.id_pesanan = ps.id_pesanan
+		 JOIN dokter d ON ps.id_dokter = d.id_dokter
+		 LEFT JOIN detail_pesanan dp ON dp.id_pesanan = ps.id_pesanan
+		 LEFT JOIN produk p ON dp.id_produk = p.id_produk
+		 WHERE pg.status_produksi IN ('antrian', 'dikerjakan', 'revisi')
+		 ORDER BY pg.created_at ASC`,
 	)
 	if err != nil {
 		return nil, err
@@ -41,19 +49,58 @@ func GetAntrianProduksi() ([]models.Pengerjaan, error) {
 	return pengerjaan, nil
 }
 
-func GetAllPengerjaan() ([]models.Pengerjaan, error) {
-	pengerjaan := []models.Pengerjaan{}
+func GetAllPengerjaan() ([]models.PengerjaanDetail, error) {
+	pengerjaan := []models.PengerjaanDetail{}
 	err := database.DB.Select(&pengerjaan,
-		`SELECT id_pengerjaan, id_pesanan, id_karyawan, id_revisi,
-		        status_produksi, catatan_karyawan, tgl_mulai, tgl_selesai,
-		        created_at, updated_at
-		 FROM pengerjaan ORDER BY created_at DESC`,
+		`SELECT 
+		    pg.id_pengerjaan, pg.id_pesanan, pg.id_karyawan, pg.id_revisi,
+		    pg.status_produksi, pg.catatan_karyawan, pg.tgl_mulai, pg.tgl_selesai,
+		    pg.created_at, pg.updated_at,
+		    d.nama_dokter,
+		    p.nama_bahan,
+		    dp.kode_gigi
+		 FROM pengerjaan pg
+		 JOIN pesanan ps ON pg.id_pesanan = ps.id_pesanan
+		 JOIN dokter d ON ps.id_dokter = d.id_dokter
+		 LEFT JOIN detail_pesanan dp ON dp.id_pesanan = ps.id_pesanan
+		 LEFT JOIN produk p ON dp.id_produk = p.id_produk
+		 ORDER BY pg.created_at DESC`,
 	)
 	if err != nil {
 		return nil, err
 	}
 	return pengerjaan, nil
 }
+
+// func GetAntrianProduksi() ([]models.Pengerjaan, error) {
+// 	pengerjaan := []models.Pengerjaan{}
+// 	err := database.DB.Select(&pengerjaan,
+// 		`SELECT id_pengerjaan, id_pesanan, id_karyawan, id_revisi,
+// 		        status_produksi, catatan_karyawan, tgl_mulai, tgl_selesai,
+// 		        created_at, updated_at
+// 		 FROM pengerjaan
+// 		 WHERE status_produksi IN ('antrian', 'dikerjakan', 'revisi')
+// 		 ORDER BY created_at ASC`,
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return pengerjaan, nil
+// }
+
+// func GetAllPengerjaan() ([]models.Pengerjaan, error) {
+// 	pengerjaan := []models.Pengerjaan{}
+// 	err := database.DB.Select(&pengerjaan,
+// 		`SELECT id_pengerjaan, id_pesanan, id_karyawan, id_revisi,
+// 		        status_produksi, catatan_karyawan, tgl_mulai, tgl_selesai,
+// 		        created_at, updated_at
+// 		 FROM pengerjaan ORDER BY created_at DESC`,
+// 	)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return pengerjaan, nil
+// }
 
 func GetPengerjaanById(id string) (models.Pengerjaan, error) {
 	var pengerjaan models.Pengerjaan
