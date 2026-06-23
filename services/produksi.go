@@ -18,6 +18,7 @@ type UpdateStatusProduksiRequest struct {
 	StatusProduksi  string `json:"status_produksi"`
 	CatatanKaryawan string `json:"catatan_karyawan"`
 	IdRevisi        string `json:"id_revisi"` // opsional
+	IdKaryawan      string `json:"id_karyawan"`
 }
 
 type AddRevisiRequest struct {
@@ -35,13 +36,15 @@ func GetAntrianProduksi() ([]models.PengerjaanDetail, error) {
             d.nama_dokter,
             p.nama_bahan,
             dp.kode_gigi, dp.ukuran, dp.warna, dp.jumlah,
-            k.nama 
+            k.nama,
+            r.deskripsi_revisi 
          FROM pengerjaan pg
          JOIN pesanan ps ON pg.id_pesanan = ps.id_pesanan
          JOIN dokter d ON ps.id_dokter = d.id_dokter
-         LEFT JOIN karyawan k ON pg.id_karyawan = k.id_karyawan -- <-- JOIN KARYAWAN
+         LEFT JOIN karyawan k ON pg.id_karyawan = k.id_karyawan
          LEFT JOIN detail_pesanan dp ON dp.id_pesanan = ps.id_pesanan
          LEFT JOIN produk p ON dp.id_produk = p.id_produk
+         LEFT JOIN revisi r ON pg.id_revisi = r.id_revisi 
          WHERE pg.status_produksi IN ('antrian', 'dikerjakan', 'revisi')
          ORDER BY pg.created_at ASC`,
 	)
@@ -249,16 +252,16 @@ func UpdateStatusProduksi(pengerjaanId string, req UpdateStatusProduksiRequest) 
 	if req.StatusProduksi == "selesai" {
 		_, err = tx.Exec(
 			`UPDATE pengerjaan
-			 SET status_produksi = $1, catatan_karyawan = $2, tgl_selesai = $3, updated_at = $4
-			 WHERE id_pengerjaan = $5`,
-			req.StatusProduksi, req.CatatanKaryawan, currentTime, currentTime, pengerjaanId,
+             SET status_produksi = $1, catatan_karyawan = $2, id_karyawan = $3, tgl_selesai = $4, updated_at = $5
+             WHERE id_pengerjaan = $6`,
+			req.StatusProduksi, req.CatatanKaryawan, req.IdKaryawan, currentTime, currentTime, pengerjaanId,
 		)
 	} else {
 		_, err = tx.Exec(
 			`UPDATE pengerjaan
-			 SET status_produksi = $1, catatan_karyawan = $2, updated_at = $3
-			 WHERE id_pengerjaan = $4`,
-			req.StatusProduksi, req.CatatanKaryawan, currentTime, pengerjaanId,
+             SET status_produksi = $1, catatan_karyawan = $2, id_karyawan = $3, updated_at = $4
+             WHERE id_pengerjaan = $5`,
+			req.StatusProduksi, req.CatatanKaryawan, req.IdKaryawan, currentTime, pengerjaanId,
 		)
 	}
 	if err != nil {
@@ -354,7 +357,7 @@ func AjukanRevisi(req AddRevisiRequest) error {
 	_, err = tx.Exec(
 		`UPDATE pengerjaan
 		 SET status_produksi = $1, id_revisi = $2, updated_at = $3
-		 WHERE id_pesanan = $4 AND status_produksi != 'selesai'`,
+		 WHERE id_pesanan = $4`,
 		"revisi", revisiId, currentTime, req.IdPesanan,
 	)
 	if err != nil {

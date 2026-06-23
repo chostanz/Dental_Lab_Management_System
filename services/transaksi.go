@@ -29,6 +29,7 @@ func GetAllTransaksi() ([]models.Transaksi, error) {
          FROM transaksi t
          JOIN pesanan p ON t.id_pesanan = p.id_pesanan
          JOIN dokter d ON p.id_dokter = d.id_dokter
+         WHERE p.status_pesanan != 'ditolak' 
          ORDER BY t.tgl_transaksi DESC`,
 	)
 	if err != nil {
