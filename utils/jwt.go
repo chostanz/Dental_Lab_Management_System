@@ -18,7 +18,7 @@ func getSecretKey() string {
 func GenerateTokenDokter(idDokter string) (string, error) {
 	claims := jwt.MapClaims{
 		"id_dokter": idDokter,
-		"exp":       time.Now().Add(24 * time.Hour).Unix(),
+		"exp":       time.Now().Add(15 * time.Minute).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(getSecretKey()))
@@ -28,7 +28,7 @@ func GenerateTokenKaryawan(idKaryawan string, role string) (string, error) {
 	claims := jwt.MapClaims{
 		"id_karyawan": idKaryawan,
 		"role":        role,
-		"exp":         time.Now().Add(24 * time.Hour).Unix(),
+		"exp":         time.Now().Add(15 * time.Minute).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(getSecretKey()))
