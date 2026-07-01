@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"os" // Wajib tambah ini untuk membaca variabel environment
 
 	sqlx "github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -10,9 +11,16 @@ import (
 var DB = Connection()
 
 func Connection() *sqlx.DB {
-	conn, err := sqlx.Connect("postgres", "user=postgres password=dewisuperkeren dbname=dental_lab sslmode=disable")
+	dsn := os.Getenv("DATABASE_URL")
+
+	if dsn == "" {
+		dsn = "user=postgres password=dewisuperkeren dbname=dental_lab sslmode=disable"
+	}
+
+	conn, err := sqlx.Connect("postgres", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	return conn
 }
