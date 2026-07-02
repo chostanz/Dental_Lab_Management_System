@@ -14,7 +14,7 @@ func Connection() *sqlx.DB {
 	dsn := os.Getenv("DATABASE_URL")
 
 	if dsn == "" {
-		dsn = "user=postgres password=dewisuperkeren dbname=dental_lab sslmode=disable"
+		dsn = "host=localhost user=postgres password=dewisuperkeren dbname=dental_lab sslmode=disable"
 	}
 
 	conn, err := sqlx.Connect("postgres", dsn)
